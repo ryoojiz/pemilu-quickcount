@@ -112,7 +112,7 @@ const paslonData: Paslon[] = [
         </Card>
       </div>
       {showConfetti && <Confetti />}
-      <audio ref={audioRef} src="/applause.mp3"/>
+      {/* <audio ref={audioRef} src="/applause.mp3"/> */}
     </div>
   )
 }
