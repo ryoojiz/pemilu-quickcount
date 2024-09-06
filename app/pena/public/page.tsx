@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import Confetti from 'react-confetti'
+import { waitForDebugger } from 'inspector'
 
 interface Paslon {
   name: string;
@@ -21,12 +22,12 @@ const paslonData: Paslon[] = [
   {
     name: "Caya",
     description: "Paslon 1",
-    imageUrl: "/Caya.jpg"
+    imageUrl: "/Caya.png"
   },
   {
     name: "Awa",
     description: "Paslon 2",
-    imageUrl: "/Awa.jpg"
+    imageUrl: "/Awa.png"
   }
 ];
 
@@ -75,7 +76,7 @@ export default function PublicView() {
     }
 
     updateVotes()
-    const interval = setInterval(updateVotes, 250) // Update every second
+    const interval = setInterval(updateVotes, 100) // Update every second
 
     return () => clearInterval(interval)
   }, [])

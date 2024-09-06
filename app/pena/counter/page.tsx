@@ -1,11 +1,10 @@
 'use client'
-
 import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 
-const UNDO_LIMIT = 500
+const UNDO_LIMIT = 10000
 
 interface Paslon {
   name: string;
@@ -23,38 +22,35 @@ const paslonData: Paslon[] = [
   {
     name: "Caya",
     description: "Paslon 1",
-    imageUrl: "/Caya.jpg"
+    imageUrl: "/Caya.png"
   },
   {
     name: "Awa",
     description: "Paslon 2",
-    imageUrl: "/Awa.jpg"
+    imageUrl: "/Awa.png"
   }
 ]
 
 export default function CounterView() {
   const [voteState, setVoteState] = useState<VoteState>({ votes: [0, 0], invalidVotes: 0, isFinalized: false })
   const [undoHistory, setUndoHistory] = useState<VoteState[]>([])
-  const [audioContext, setAudioContext] = useState<AudioContext | null>(null)
+  const [voteSound, setVoteSound] = useState<HTMLAudioElement | null>(null)
+  const [pressedKeys, setPressedKeys] = useState<string[]>([])
 
   useEffect(() => {
-    setAudioContext(new (window.AudioContext || (window as any).webkitAudioContext)())
+    const sound = new Audio('/vote-sound.mp3')
+    setVoteSound(sound)
   }, [])
 
   useEffect(() => {
     localStorage.setItem('voteState', JSON.stringify(voteState))
   }, [voteState])
 
-  const playSound = useCallback(() => {
-    if (audioContext) {
-      const oscillator = audioContext.createOscillator()
-      oscillator.type = 'sine'
-      oscillator.frequency.setValueAtTime(440, audioContext.currentTime) // 440 Hz = A4 note
-      oscillator.connect(audioContext.destination)
-      oscillator.start()
-      oscillator.stop(audioContext.currentTime + 0.1) // Stop after 0.1 seconds
+  const playVoteSound = useCallback(() => {
+    if (voteSound) {
+      voteSound.play()
     }
-  }, [audioContext])
+  }, [voteSound])
 
   const updateVoteState = useCallback((updater: (prevState: VoteState) => VoteState) => {
     setVoteState(prevState => {
@@ -62,14 +58,15 @@ export default function CounterView() {
       setUndoHistory(prev => [prevState, ...prev].slice(0, UNDO_LIMIT))
       return newState
     })
-  }, [playSound])
+  }, [])
 
   const addVote = useCallback((index: number) => {
     updateVoteState(prevState => ({
       ...prevState,
       votes: prevState.votes.map((count, i) => i === index ? count + 1 : count)
     }))
-  }, [updateVoteState])
+    playVoteSound()
+  }, [updateVoteState, playVoteSound])
 
   const addInvalidVote = useCallback(() => {
     updateVoteState(prevState => ({
@@ -83,18 +80,23 @@ export default function CounterView() {
       const [lastState, ...rest] = undoHistory
       setVoteState(lastState)
       setUndoHistory(rest)
-      playSound()
     }
-  }, [undoHistory, playSound])
+  }, [undoHistory])
+
   const finalizeResults = useCallback(() => {
     setVoteState(prevState => ({
       ...prevState,
       isFinalized: true
     }))
-    playSound()
-  }, [playSound])
+  }, [])
+
   const handleKeyPress = useCallback((event: KeyboardEvent) => {
     const key = event.key.toLowerCase()
+
+    if (pressedKeys.includes(key)) return
+
+    setPressedKeys(prev => [...prev, key])
+
     if (['1', '2'].includes(key)) {
       addVote(parseInt(key) - 1)
     } else if (key === 'z') {
@@ -104,12 +106,23 @@ export default function CounterView() {
     } else if (key === 'f') {
       finalizeResults()
     }
-  }, [addVote, undo, addInvalidVote, finalizeResults])
+
+  }, [addVote, undo, addInvalidVote, finalizeResults, pressedKeys])
+
+  const handleKeyUp = useCallback((event: KeyboardEvent) => {
+    const key = event.key.toLowerCase()
+    setPressedKeys(prev => prev.filter(k => k !== key))
+  }, [])
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyPress)
-    return () => window.removeEventListener('keydown', handleKeyPress)
-  }, [handleKeyPress])
+    window.addEventListener('keyup', handleKeyUp)
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyPress)
+      window.removeEventListener('keyup', handleKeyUp)
+    }
+  }, [handleKeyPress, handleKeyUp])
 
   const totalVotes = voteState.votes.reduce((sum, count) => sum + count, 0) + voteState.invalidVotes
 
@@ -119,10 +132,12 @@ export default function CounterView() {
         <h1 className="text-3xl font-bold mb-6 text-center">Vote Counter</h1>
         <Card className="bg-white mb-6">
           <CardHeader>
-            <CardTitle className="text-xl">Total Votes</CardTitle>
+            <CardTitle className={`text-xl ${voteState.isFinalized ? 'font-sans' : 'font-space-grotesk'}`}>Total Votes</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-4xl font-bold text-center">{totalVotes}</p>
+            <p className={`text-4xl font-bold text-center ${voteState.isFinalized ? 'font-sans' : 'font-space-grotesk'}`}>
+              {totalVotes}
+            </p>
           </CardContent>
         </Card>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -138,12 +153,16 @@ export default function CounterView() {
                     className="rounded-lg"
                   />
                 </div>
-                <CardTitle className="text-xl mb-2">{paslon.name}</CardTitle>
-                <CardDescription>{paslon.description}</CardDescription>
+                <CardTitle className={`text-xl mb-2 ${voteState.isFinalized ? 'font-sans' : 'font-space-grotesk'}`}>{paslon.name}</CardTitle>
+                <CardDescription className={voteState.isFinalized ? 'font-sans' : 'font-space-grotesk'}>
+                  {paslon.description}
+                </CardDescription>
               </CardHeader>
               <CardContent className="flex-grow flex flex-col justify-end">
                 <div className="flex flex-col items-center">
-                  <p className="text-4xl font-bold mb-4 ">{voteState.votes[index]}</p>
+                  <p className={`text-4xl font-bold mb-4 ${voteState.isFinalized ? 'font-sans' : 'font-space-grotesk'}`}>
+                    {voteState.votes[index]}
+                  </p>
                   <Button onClick={() => addVote(index)} className="w-full" disabled={voteState.isFinalized}>
                     Vote ({index + 1})
                   </Button>
@@ -154,10 +173,12 @@ export default function CounterView() {
         </div>
         <Card className="bg-white mb-6">
           <CardHeader>
-            <CardTitle className="text-xl">Invalid Votes</CardTitle>
+            <CardTitle className={`text-xl ${voteState.isFinalized ? 'font-sans' : 'font-space-grotesk'}`}>Invalid Votes</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-4xl font-bold mb-4 text-center">{voteState.invalidVotes}</p>
+            <p className={`text-4xl font-bold mb-4 text-center ${voteState.isFinalized ? 'font-sans' : 'font-space-grotesk'}`}>
+              {voteState.invalidVotes}
+            </p>
             <Button onClick={addInvalidVote} className="w-full" variant="outline" disabled={voteState.isFinalized}>
               Invalid Vote (0)
             </Button>

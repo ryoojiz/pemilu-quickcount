@@ -10,29 +10,47 @@ interface Paslon {
   description: string;
   imageUrl: string;
 }
+const convertToTallyFont = (num: number): string => {
+  const groupsOfFive = Math.floor(num / 5);
+  const remainder = num % 5;
+  
+  const tallyMap = { 1: 'a', 2: 'b', 3: 'c', 4: 'd', 5: 'e' };
+  let result = '';
 
+  // Add 'e' for groups of 5
+  for (let i = 0; i < groupsOfFive; i++) {
+    result += 'e';
+  }
+
+  // Add remainder
+  if (remainder > 0) {
+    result += tallyMap[remainder];
+  }
+
+  return result;
+}
 interface VoteState {
   votes: number[];
   invalidVotes: number;
   isFinalized: boolean;
 }
 const paslonData: Paslon[] = [
-    {
-      name: "Karina & Mabel",
-      description: "Paslon 1",
-      imageUrl: "/Paslon1.jpg"
-    },
-    {
-      name: "Abay & Diva",
-      description: "Paslon 2",
-      imageUrl: "/Paslon2.jpg"
-    },
-    {
-      name: "Biel & Mayra",
-      description: "Paslon 3",
-      imageUrl: "/Paslon3.jpg"
-    }
-  ]
+  {
+    name: "Karina & Mabel",
+    description: "Paslon 1",
+    imageUrl: "/Paslon1.png"
+  },
+  {
+    name: "Abay & Diva",
+    description: "Paslon 2",
+    imageUrl: "/Paslon2.png"
+  },
+  {
+    name: "Biel & Mayra",
+    description: "Paslon 3",
+    imageUrl: "/Paslon3.png"
+  }
+]
 
   export default function PublicView() {
     const [voteState, setVoteState] = useState<VoteState>({ votes: [0, 0, 0], invalidVotes: 0, isFinalized: false })
@@ -95,8 +113,10 @@ const paslonData: Paslon[] = [
                 <CardDescription>{paslon.description}</CardDescription>
               </CardHeader>
               <CardContent className="flex-grow flex flex-col justify-end">
-                <div className="flex flex-col items-center">
-                  <p className="text-4xl font-bold">{voteState.votes[index]}</p>
+                <div className="inline-flex items-center justify-start w-auto break-all">
+                  <p className="text-4xl font-bold text-left" style={{ fontFamily: 'Tally Mark' }}>
+                    {convertToTallyFont(voteState.votes[index])}
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -107,7 +127,11 @@ const paslonData: Paslon[] = [
             <CardTitle className="text-xl">Tidak Sah</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-4xl font-bold">{voteState.invalidVotes}</p>
+            <div className="inline-flex items-center justify-start w-auto">
+              <p className="text-4xl font-bold text-left break-all" style={{ fontFamily: 'Tally Mark' }}>
+                {convertToTallyFont(voteState.invalidVotes)}
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>
