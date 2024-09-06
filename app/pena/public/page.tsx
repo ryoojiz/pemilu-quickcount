@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import Confetti from 'react-confetti'
-import { waitForDebugger } from 'inspector'
 
 interface Paslon {
   name: string;
@@ -54,7 +53,7 @@ const convertToTallyFont = (num: number): string => {
 }
 
 export default function PublicView() {
-  const [voteState, setVoteState] = useState<VoteState>({ votes: [0, 0, 0], invalidVotes: 0, isFinalized: false })
+  const [voteState, setVoteState] = useState<VoteState>({ votes: [0, 0], invalidVotes: 0, isFinalized: false })
   const [showConfetti, setShowConfetti] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
@@ -90,7 +89,7 @@ export default function PublicView() {
         <h1 className="text-3xl font-bold mb-6 text-center">Public Vote Display</h1>
         <Card className="bg-white mb-6">
           <CardHeader>
-            <CardTitle className="text-xl">Total Votes</CardTitle>
+            <CardTitle className="text-xl">Total Suara</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-4xl font-bold">{totalVotes}</p>
@@ -114,8 +113,9 @@ export default function PublicView() {
               </CardHeader>
               <CardContent className="flex-grow flex flex-col justify-end">
                 <div className="inline-flex items-center justify-start w-auto break-all">
-                  <p className="text-4xl font-bold text-left" style={{ fontFamily: 'Tally Mark' }}>
-                    {convertToTallyFont(voteState.votes[index])}
+                  {/* Conditionally display tally font or original vote count */}
+                  <p className="text-5xl font-bold text-left" style={{ fontFamily: voteState.isFinalized ? 'inherit' : 'Tally Mark' }}>
+                    {voteState.isFinalized ? voteState.votes[index] : convertToTallyFont(voteState.votes[index])}
                   </p>
                 </div>
               </CardContent>
@@ -128,8 +128,9 @@ export default function PublicView() {
           </CardHeader>
           <CardContent>
             <div className="inline-flex items-center justify-start w-auto">
-              <p className="text-4xl font-bold text-left break-all" style={{ fontFamily: 'Tally Mark' }}>
-                {convertToTallyFont(voteState.invalidVotes)}
+              {/* Conditionally display tally font or original invalid vote count */}
+              <p className="text-4xl font-bold text-left break-all" style={{ fontFamily: voteState.isFinalized ? 'inherit' : 'Tally Mark' }}>
+                {voteState.isFinalized ? voteState.invalidVotes : convertToTallyFont(voteState.invalidVotes)}
               </p>
             </div>
           </CardContent>

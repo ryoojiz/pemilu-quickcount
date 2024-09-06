@@ -10,10 +10,11 @@ interface Paslon {
   description: string;
   imageUrl: string;
 }
+
 const convertToTallyFont = (num: number): string => {
   const groupsOfFive = Math.floor(num / 5);
   const remainder = num % 5;
-  
+
   const tallyMap = { 1: 'a', 2: 'b', 3: 'c', 4: 'd', 5: 'e' };
   let result = '';
 
@@ -30,11 +31,13 @@ const convertToTallyFont = (num: number): string => {
 
   return result;
 }
+
 interface VoteState {
   votes: number[];
   invalidVotes: number;
   isFinalized: boolean;
 }
+
 const paslonData: Paslon[] = [
   {
     name: "Karina & Mabel",
@@ -53,37 +56,36 @@ const paslonData: Paslon[] = [
   }
 ]
 
-  export default function PublicView() {
-    const [voteState, setVoteState] = useState<VoteState>({ votes: [0, 0, 0], invalidVotes: 0, isFinalized: false })
-    const [showConfetti, setShowConfetti] = useState(false)
-    const audioRef = useRef<HTMLAudioElement | null>(null)
-  
-    useEffect(() => {
-      const updateVotes = () => {
-        const storedVoteState = localStorage.getItem('voteState')
-        if (storedVoteState) {
-          const newVoteState = JSON.parse(storedVoteState)
-          setVoteState(prevState => {
-            if (!prevState.isFinalized && newVoteState.isFinalized) {
-              setShowConfetti(true)
-              if (audioRef.current) {
-                audioRef.current.play()
-              }
-              setTimeout(() => setShowConfetti(false), 10000) // Stop confetti after 10 seconds
+export default function PublicView() {
+  const [voteState, setVoteState] = useState<VoteState>({ votes: [0, 0, 0], invalidVotes: 0, isFinalized: false })
+  const [showConfetti, setShowConfetti] = useState(false)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+
+  useEffect(() => {
+    const updateVotes = () => {
+      const storedVoteState = localStorage.getItem('voteState')
+      if (storedVoteState) {
+        const newVoteState = JSON.parse(storedVoteState)
+        setVoteState(prevState => {
+          if (!prevState.isFinalized && newVoteState.isFinalized) {
+            setShowConfetti(true)
+            if (audioRef.current) {
+              audioRef.current.play()
             }
-            return newVoteState
-          })
-        }
+            setTimeout(() => setShowConfetti(false), 10000) // Stop confetti after 10 seconds
+          }
+          return newVoteState
+        })
       }
-  
-      updateVotes()
-      const interval = setInterval(updateVotes, 250) // Update every second
-  
-      return () => clearInterval(interval)
-    }, [])
-  
-    const totalVotes = voteState.votes.reduce((sum, count) => sum + count, 0) + voteState.invalidVotes
-  
+    }
+
+    updateVotes()
+    const interval = setInterval(updateVotes, 250) // Update every quarter second
+
+    return () => clearInterval(interval)
+  }, [])
+
+  const totalVotes = voteState.votes.reduce((sum, count) => sum + count, 0) + voteState.invalidVotes
 
   return (
     <div className="min-h-screen bg-gray-100 text-gray-900">
@@ -115,8 +117,9 @@ const paslonData: Paslon[] = [
               </CardHeader>
               <CardContent className="flex-grow flex flex-col justify-end">
                 <div className="inline-flex items-center justify-start w-auto break-all">
-                  <p className="text-4xl font-bold text-left" style={{ fontFamily: 'Tally Mark' }}>
-                    {convertToTallyFont(voteState.votes[index])}
+                  {/* Conditionally display tally font or original vote count */}
+                  <p className="text-5xl font-bold text-left" style={{ fontFamily: voteState.isFinalized ? 'inherit' : 'Tally Mark' }}>
+                    {voteState.isFinalized ? voteState.votes[index] : convertToTallyFont(voteState.votes[index])}
                   </p>
                 </div>
               </CardContent>
@@ -129,8 +132,9 @@ const paslonData: Paslon[] = [
           </CardHeader>
           <CardContent>
             <div className="inline-flex items-center justify-start w-auto">
-              <p className="text-4xl font-bold text-left break-all" style={{ fontFamily: 'Tally Mark' }}>
-                {convertToTallyFont(voteState.invalidVotes)}
+              {/* Conditionally display tally font or original invalid vote count */}
+              <p className="text-4xl font-bold text-left break-all" style={{ fontFamily: voteState.isFinalized ? 'inherit' : 'Tally Mark' }}>
+                {voteState.isFinalized ? voteState.invalidVotes : convertToTallyFont(voteState.invalidVotes)}
               </p>
             </div>
           </CardContent>
