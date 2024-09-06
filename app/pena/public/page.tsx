@@ -16,6 +16,7 @@ interface VoteState {
   invalidVotes: number;
   isFinalized: boolean;
 }
+
 const paslonData: Paslon[] = [
   {
     name: "Caya",
@@ -27,39 +28,59 @@ const paslonData: Paslon[] = [
     description: "Paslon 2",
     imageUrl: "/Awa.jpg"
   }
-]
+];
 
-  export default function PublicView() {
-    const [voteState, setVoteState] = useState<VoteState>({ votes: [0, 0, 0], invalidVotes: 0, isFinalized: false })
-    const [showConfetti, setShowConfetti] = useState(false)
-    const audioRef = useRef<HTMLAudioElement | null>(null)
+// Function to convert the number to tally font characters
+const convertToTallyFont = (num: number): string => {
+  const groupsOfFive = Math.floor(num / 5);
+  const remainder = num % 5;
   
-    useEffect(() => {
-      const updateVotes = () => {
-        const storedVoteState = localStorage.getItem('voteState')
-        if (storedVoteState) {
-          const newVoteState = JSON.parse(storedVoteState)
-          setVoteState(prevState => {
-            if (!prevState.isFinalized && newVoteState.isFinalized) {
-              setShowConfetti(true)
-              if (audioRef.current) {
-                audioRef.current.play()
-              }
-              setTimeout(() => setShowConfetti(false), 10000) // Stop confetti after 10 seconds
+  const tallyMap = { 1: 'a', 2: 'b', 3: 'c', 4: 'd', 5: 'e' };
+  let result = '';
+
+  // Add 'e' for groups of 5
+  for (let i = 0; i < groupsOfFive; i++) {
+    result += 'e';
+  }
+
+  // Add remainder
+  if (remainder > 0) {
+    result += tallyMap[remainder];
+  }
+
+  return result;
+}
+
+export default function PublicView() {
+  const [voteState, setVoteState] = useState<VoteState>({ votes: [0, 0, 0], invalidVotes: 0, isFinalized: false })
+  const [showConfetti, setShowConfetti] = useState(false)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+
+  useEffect(() => {
+    const updateVotes = () => {
+      const storedVoteState = localStorage.getItem('voteState')
+      if (storedVoteState) {
+        const newVoteState = JSON.parse(storedVoteState)
+        setVoteState(prevState => {
+          if (!prevState.isFinalized && newVoteState.isFinalized) {
+            setShowConfetti(true)
+            if (audioRef.current) {
+              audioRef.current.play()
             }
-            return newVoteState
-          })
-        }
+            setTimeout(() => setShowConfetti(false), 10000) // Stop confetti after 10 seconds
+          }
+          return newVoteState
+        })
       }
-  
-      updateVotes()
-      const interval = setInterval(updateVotes, 250) // Update every second
-  
-      return () => clearInterval(interval)
-    }, [])
-  
-    const totalVotes = voteState.votes.reduce((sum, count) => sum + count, 0) + voteState.invalidVotes
-  
+    }
+
+    updateVotes()
+    const interval = setInterval(updateVotes, 250) // Update every second
+
+    return () => clearInterval(interval)
+  }, [])
+
+  const totalVotes = voteState.votes.reduce((sum, count) => sum + count, 0) + voteState.invalidVotes
 
   return (
     <div className="min-h-screen bg-gray-100 text-gray-900">
@@ -90,8 +111,10 @@ const paslonData: Paslon[] = [
                 <CardDescription>{paslon.description}</CardDescription>
               </CardHeader>
               <CardContent className="flex-grow flex flex-col justify-end">
-                <div className="flex flex-col items-center">
-                  <p className="text-4xl font-bold">{voteState.votes[index]}</p>
+                <div className="inline-flex items-center justify-start w-auto break-all">
+                  <p className="text-4xl font-bold text-left" style={{ fontFamily: 'Tally Mark' }}>
+                    {convertToTallyFont(voteState.votes[index])}
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -102,7 +125,11 @@ const paslonData: Paslon[] = [
             <CardTitle className="text-xl">Tidak Sah</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-4xl font-bold">{voteState.invalidVotes}</p>
+            <div className="inline-flex items-center justify-start w-auto">
+              <p className="text-4xl font-bold text-left break-all" style={{ fontFamily: 'Tally Mark' }}>
+                {convertToTallyFont(voteState.invalidVotes)}
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>
