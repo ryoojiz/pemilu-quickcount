@@ -46,6 +46,7 @@ const convertToTallyFont = (num: number): string => {
 
   // Add remainder
   if (remainder > 0) {
+    // @ts-ignore
     result += tallyMap[remainder];
   }
 
